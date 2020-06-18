@@ -55,10 +55,19 @@
                             
                                     <v-card-text>
                                         <v-form ref="form" v-model="valid" :lazy-validation="lazy">
-                                            <v-text-field v-model="username" :counter="32" :rules="usernameRules" label="Username" required>
+                                            <v-text-field v-model="username" :counter="32" prepend-icon="mdi-account" :rules="usernameRules" label="Username" required>
                                             </v-text-field>
-                                            <v-textarea v-model="text" label="Text" counter maxlength="512" full-width single-line :rules="textRules">
+                                            <v-textarea v-model="text" label="Text" counter maxlength="512" prepend-icon="mdi-comment-text" full-width single-line :rules="textRules">
                                             </v-textarea>
+                                            <v-file-input
+                                              :rules="imageRules"
+                                              v-model="image"
+                                              accept="image/png, image/jpeg, image/bmp"
+                                              placeholder="Pick an image"
+                                              prepend-icon="mdi-file-image"
+                                              label="Image"
+                                              class="mt-4"
+                                            ></v-file-input>
                                         </v-form>
                                     </v-card-text>
                             
@@ -71,7 +80,7 @@
                             
                                         <v-btn
                                           color="success darken-1"
-                                          @click="dialog = false"
+                                          @click="dialog = false; submitReview()"
                                           :disabled="!valid"
                                         >
                                             submit
@@ -107,7 +116,7 @@
                                     {{ review.text }}
                                 </v-card-text>
                                 <v-card-subtitle class="text-right pt-0">
-                                    {{ review.created_at_humanized }}
+                                    {{ getHumanizedDateTime(review.created_at) }}
                                 </v-card-subtitle>
                             </v-card>
                         </v-col>
@@ -148,6 +157,10 @@
                 v => (v && v.length >= 16) || 'Text must be more than 16 characters',
                 v => (v && v.length <= 512) || 'Text must be less than 512 characters'
             ],
+            image: null,
+            imageRules: [
+                value => !value || value.size < 4000000 || 'Image size should be less than 2 MB!',
+            ],
             lazy: false,
             reviews: []
         }),
@@ -159,6 +172,23 @@
                 axios
                     .get('/api/reviews/')
                     .then(response => (this.reviews = response.data));
+            },
+            submitReview() {
+                let formData = new FormData();
+                formData.append('username', this.username)
+                formData.append('text', this.text)
+                formData.append('image', this.image)
+                axios
+                    .post('/api/reviews/', formData)
+                    .then(response => {
+                        this.$refs.form.reset();
+                        this.reviews.push(response.data);
+                    })
+            },
+            getHumanizedDateTime(dateStr) {
+                let date = new Date(dateStr)
+                let options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
+                return date.toLocaleString('ru-US', options)
             }
         },
         mounted() {

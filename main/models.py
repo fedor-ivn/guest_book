@@ -13,6 +13,3 @@ class Review(models.Model):
     )
     image = models.ImageField(upload_to='reviews', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def created_at_humanized(self):
-        return self.created_at.strftime("%b %d %Y, %H:%M")
