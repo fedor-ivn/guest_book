@@ -43,11 +43,12 @@
                         </v-col>
                         <v-col class="text-right" lg="5">
                             <v-btn
-                             fab dark small right 
                              color="success"
                              @click.stop="dialog = true"
                             >
-                                <v-icon dark>mdi-plus</v-icon>
+                            <v-icon dark>mdi-plus</v-icon>
+
+                                add new
                             </v-btn>
                             <v-dialog v-model="dialog" persistent max-width="600px">
                                 <v-card>
@@ -121,6 +122,18 @@
                             </v-card>
                         </v-col>
                     </v-row>
+                    <v-row>
+                        <v-col>
+                            <div class="text-center">
+                                <v-pagination 
+                                 v-model="page" 
+                                 :length="pagesCount"
+                                 @input="getReviews()"
+                                >
+                                </v-pagination>
+                            </div>
+                        </v-col>
+                    </v-row>
                 </v-container>
             </v-main>
             {% endverbatim %}
@@ -162,27 +175,49 @@
                 value => !value || value.size < 4000000 || 'Image size should be less than 2 MB!',
             ],
             lazy: false,
-            reviews: []
+            reviews: [],
+            reviewsCount: null,
+            page: 1
         }),
+        computed: {
+            pagesCount(){
+                return Math.ceil(parseFloat(this.reviewsCount) / 5)
+            }
+        },
         methods: {
             validate() {
                 this.$refs.form.validate();
             },
             getReviews() {
                 axios
-                    .get('/api/reviews/')
-                    .then(response => (this.reviews = response.data));
+                    .get('/api/reviews/', {
+                        params: {
+                            page: this.page,
+                            ordering: '-created_at'
+                        }
+                    })
+                    .then(response => {
+                        this.reviews = response.data.results;
+                        this.reviewsCount = response.data.count;
+                    });
             },
             submitReview() {
                 let formData = new FormData();
                 formData.append('username', this.username)
                 formData.append('text', this.text)
-                formData.append('image', this.image)
+                if (this.image){
+                    formData.append('image', this.image)
+                }
                 axios
                     .post('/api/reviews/', formData)
                     .then(response => {
                         this.$refs.form.reset();
                         this.reviews.push(response.data);
+                        this.reviews.sort(function(a, b){
+                            return a.id - b.id;
+                        });
+                        this.reviews.reverse();
+                        this.reviews = this.reviews.slice(0, 5);
                     })
             },
             getHumanizedDateTime(dateStr) {
