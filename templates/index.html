@@ -218,6 +218,7 @@
                         });
                         this.reviews.reverse();
                         this.reviews = this.reviews.slice(0, 5);
+                        ++this.reviewsCount;
                     })
             },
             getHumanizedDateTime(dateStr) {
