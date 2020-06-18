@@ -11,5 +11,5 @@ class Review(models.Model):
         max_length=512,
         validators=[MinLengthValidator(16)]
     )
-    image = models.ImageField(null=True, blank=True)
+    image = models.ImageField(upload_to='reviews', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
