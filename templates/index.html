@@ -14,7 +14,6 @@
     </style>
 </head>
 <body>
-    {% verbatim %}
     <div id="app">
         <v-app id="inspire">
             <v-navigation-drawer v-model="drawer" app>
@@ -33,7 +32,7 @@
                 <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
                 <v-toolbar-title>Guest Book</v-toolbar-title>
             </v-app-bar>
-
+            {% verbatim %}
             <v-main>
                 <v-container>
                     <v-row justify="center">
@@ -56,13 +55,9 @@
                             
                                     <v-card-text>
                                         <v-form ref="form" v-model="valid" :lazy-validation="lazy">
-                                            <v-text-field v-model="name" :counter="32" :rules="nameRules" label="Name" required>
+                                            <v-text-field v-model="username" :counter="32" :rules="usernameRules" label="Username" required>
                                             </v-text-field>
-                                        
-                                            <v-text-field v-model="email" :rules="emailRules" label="E-mail" required>
-                                            </v-text-field>
-                                        
-                                            <v-textarea v-model="text" label="Text" counter maxlength="2000" full-width single-line :rules="textRules">
+                                            <v-textarea v-model="text" label="Text" counter maxlength="512" full-width single-line :rules="textRules">
                                             </v-textarea>
                                         </v-form>
                                     </v-card-text>
@@ -74,7 +69,11 @@
                                             cancel
                                         </v-btn>
                             
-                                        <v-btn color="success darken-1" text @click="dialog = false" :disabled="!valid">
+                                        <v-btn
+                                          color="success darken-1"
+                                          @click="dialog = false"
+                                          :disabled="!valid"
+                                        >
                                             submit
                                         </v-btn>
                                     </v-card-actions>
@@ -87,34 +86,40 @@
                             <v-divider></v-divider>
                         </v-col>
                     </v-row>
-                    <v-row class="mt-3" justify="center">
+                    <v-row 
+                      class="mt-3" 
+                      justify="center"
+                      v-for="review in reviews"
+                    >
                         <v-col lg="10">
                             <v-card class="mx-auto">
-                                <v-img height="300px" src="https://cdn.vuetifyjs.com/images/cards/docks.jpg">
-                                </v-img>
-                                <div class="gradient" style="height: 300px;"></div>
+                                <v-img
+                                  v-if="review.image"
+                                  height="300px" 
+                                  :src='review.image'
+                                 
+                                ></v-img>
+                                <div v-else  class="gradient" style="height: 300px;"></div>
                     
-                                <v-card-title>Username</v-card-title>
+                                <v-card-title>{{ review.username }}</v-card-title>
                     
                                 <v-card-text class="text--primary">
-                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel facilis alias id possimus maxime iure atque
-                                    quos. Deserunt similique illo voluptatum quaerat temporibus saepe sint ut, dolorem voluptatibus eos
-                                    commodi?
+                                    {{ review.text }}
                                 </v-card-text>
-                                <v-card-subtitle class="text-right pt-0 pb-2">
-                                    14.02.2003
+                                <v-card-subtitle class="text-right pt-0">
+                                    {{ review.created_at_humanized }}
                                 </v-card-subtitle>
                             </v-card>
                         </v-col>
                     </v-row>
                 </v-container>
             </v-main>
+            {% endverbatim %}
             <v-footer color="indigo" app>
                 <span class="white--text">&copy; 2020</span>
             </v-footer>
         </v-app>
     </div>
-    {% endverbatim %}
 </body>
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
@@ -129,8 +134,36 @@
 
         data: () => ({
             drawer: null,
-            dialog: false
+            dialog: false,
+            valid: true,
+            username: '',
+            usernameRules: [
+                v => !!v || 'Username is required',
+                v => (v && v.length <= 32) || 'Username must be less than 32 characters',
+                v => (v && v.length >= 3) || 'Username must be more than 3 characters'
+            ],
+            text: '',
+            textRules: [
+                v => !!v || 'Text is required',
+                v => (v && v.length >= 16) || 'Text must be more than 16 characters',
+                v => (v && v.length <= 512) || 'Text must be less than 512 characters'
+            ],
+            lazy: false,
+            reviews: []
         }),
+        methods: {
+            validate() {
+                this.$refs.form.validate();
+            },
+            getReviews() {
+                axios
+                    .get('/api/reviews/')
+                    .then(response => (this.reviews = response.data));
+            }
+        },
+        mounted() {
+            this.getReviews();
+        }
     })
 </script>
 </html>
